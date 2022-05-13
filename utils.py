@@ -117,4 +117,118 @@ def compare_df_col(df1, df2, missing_var):
             err_data_col.append(v)
     return err_data_col
 
-class 
+class workflowgrader():
+    """
+    
+    """
+    def __init__(self,gradespace,ref_workflow, workflows):
+        self.gradespace = gradespace
+        self.ref_workflow = ref_workflow
+        self.workflows = glob.glob(os.path.join(gradespace,'[0-9]*'))
+        self.ref_output = collect_workflow_outputs(os.path.join(gradespace,ref_workflow))
+        self.question_keys() = self.ref_output.keys()
+
+        # assume no directories except for example workflows folder
+        
+    def compare_df_varnames(df1, df2):
+    """
+    Compares the variable names of the dataframes.
+    The dataframe df1 is the reference which df2 is compared against. 
+    
+    Note that this function does not commutes.
+
+    Args:
+        df1, df2: dataframes extracted from COT nodes.
+    Returns:
+        missing_vars: list of variable names which are in df1 but not in df2.
+        matched_vars: list of variable names which are in df1 and also in df2.
+        score: a number in [0,1] to indicate the fraction of correctly matched variable names.
+    """
+    df1_col = df1.columns
+    df2_col = df2.columns
+    missing_vars = []
+    foreign_vars = []
+    for varname in df1_col:
+        if not (varname in df2_col):
+            missing_vars.append(varname)
+    for varname in df2_col:
+        if not (varname in df1_col):
+            foreign_vars.append(varname)
+    return missing_vars, foreign_vars, (len(df1_col)-len(missing_vars))/len(df1_col)
+
+    def compare_df_dtypes(df1, df2, missing_var, foreign_var):
+    """
+    Returns a list of tuples which describe the variable name together
+    with the expected and incorrect datatype.
+    
+    Note that this function does not commutes.
+
+    Args:
+        df1: dataframe output which is reference
+        df2: dataframe output from a submission
+        missing_var: list of missing variables from df1
+        foreign_var: list of foreign variables in df2
+    
+    Returns:
+        var_incorrect_dtype: list of 3-tuple of the form (variable_name, expected_dtype, actual_dtype)
+    """
+    df1 = df1.drop(columns=missing_var)
+    df2 = df2.drop(columns=foreign_var)
+    var_incorrect_dtype = []
+    for v in df1.columns:
+        if not (df1.dtypes[v] == df2.dtypes[v]):
+            var_incorrect_dtype.append((v,df1.dtypes[v],df2.dtypes[v]))
+    return var_incorrect_dtype
+
+    def compare_COT_annotation(self,d2):
+    """
+    Compares the annotation of the COT nodes based on the dictionaries 
+    from `collect_workflow_outputs`. The dictionary d1 is the reference
+    which d2 is compared against. 
+    
+    Note that this function does not commutes.
+    
+    Args:
+        d1, d2: dictionaries of form {node_annotation: dataframe_from_COT}.
+    Returns:
+        missing_ann: list of annotations of d1 which are not in d2.
+        foreign_ann: list of annotations of d2 which are not in d1.
+    """
+    foreign_ann = []
+    missing_ann = []
+    for k in self.ref_output:
+        if not (k in list(d2.keys())):
+            missing_ann.append(k)
+    for k in d2:
+        if not (k in list(self.ref_output.keys())):
+            foreign_ann.append(k)
+    return missing_ann, foreign_ann     
+    
+    def compare_varnames(self, d2):
+        """
+        
+        """
+        mfs_list = []
+        for k in self.question_keys:
+            mfs_list.append(compare_df_varnames(self.ref_output[v],d2[v]))
+    return dict(zip(self.question_keys,mfs_list))
+
+    def compare_dtypes(self, d2):
+        """
+        
+        """
+        mfs = self.compare_varnames(d2)
+        
+        for k in self.question_keys:
+
+
+        compare_df_dtypes()
+
+    
+    return dict(zip(self.question_keys,mfs_list))
+        
+    
+    def grade(self):
+        """
+
+        """

@@ -70,6 +70,7 @@ def find_service_table_node_dirnames(path_to_knime_workflow):
     for settings_filepath in Path(path_to_knime_workflow).glob("*/settings.xml"):
         with settings_filepath.open() as fh:
             for line in fh:
+                # print(line)
                 if "ContainerTableInputNodeFactory" in line:
                     *extra, dirname, _settings_xml = settings_filepath.parts
                     input_service_table_node_dirnames.append(dirname)
@@ -82,7 +83,33 @@ def find_service_table_node_dirnames(path_to_knime_workflow):
     return input_service_table_node_dirnames, output_service_table_node_dirnames
 
 # NEW
-def find_service_table_output_node_annotation(
+def find_service_file_reader_node_dirnames(path_to_knime_workflow):
+    """Returns a tuple containing the unique directory names of 
+    CSV, File and Excel Reader nodes employed by the KNIME workflow in the
+    specified path on disk.  The output tuple contains a single list of 
+    node directories."""
+
+    file_reader_node_dirnames = []
+
+    for settings_filepath in Path(path_to_knime_workflow).glob("*/settings.xml"):
+        with settings_filepath.open() as fh:
+            for line in fh:
+                if "CSVTableReaderNodeFactory" in line:
+                    *extra, dirname, _settings_xml = settings_filepath.parts
+                    file_reader_node_dirnames.append(dirname)
+                    break
+                elif "ExcelTableReaderNodeFactory" in line:
+                    *extra, dirname, _settings_xml = settings_filepath.parts
+                    file_reader_node_dirnames.append(dirname)
+                    break
+                elif "FileReaderNodeFactory" in line:
+                    *extra, dirname, _settings_xml = settings_filepath.parts
+                    file_reader_node_dirnames.append(dirname)
+                    break
+    return file_reader_node_dirnames
+
+# NEW
+def find_service_COT_node_annotation(
     path_to_knime_workflow,
     unique_node_dirname
 ):
@@ -102,6 +129,33 @@ def find_service_table_output_node_annotation(
                     break
             break
 
+    return parameter_name
+
+# NEW
+def find_service_file_reader_data_path(
+    path_to_knime_workflow,
+    unique_node_dirname
+):
+    """
+    Returns the data path of CSV, File and Excel Reader nodes.
+    """
+    tree = ElementTree.parse(
+        Path(path_to_knime_workflow, unique_node_dirname, "settings.xml")
+    )
+    top_config = tree.getroot()
+    # print(top_config)
+    parameter_name = None
+    for config in top_config:
+        if config.attrib.get("key") == "model":
+            for a in config:
+                if a.attrib.get("key") == "settings":
+                    for b in a:
+                        if b.attrib.get("key") == "file_selection":
+                            for c in b:
+                                if c.attrib.get("key") == "path":
+                                    for d in c:
+                                        if d.attrib.get("key") == "path":
+                                            parameter_name = d.attrib.get("value")
     return parameter_name
 
 
@@ -229,6 +283,7 @@ def run_workflow_using_multiple_service_tables(
         path_to_knime_workflow,
         input_service_table_node_ids,
         output_service_table_node_ids,
+        file_reader_node_ids,
         *,
         save_after_execution=False,
         live_passthru_stdout_stderr=False,
@@ -378,11 +433,11 @@ class LocalWorkflow:
     `workflow_path` can instead be relative to the workspace's location.
     """
 
-    __slots__ = ("_data_table_inputs", "_data_table_outputs",
+    __slots__ = ("_data_table_inputs", "_data_table_outputs", "_file_readers_data_dir",
             "_service_table_input_nodes", "_service_table_output_nodes",
+            "_service_file_reader_nodes",
             "save_after_execution",
-            "path_to_knime_workflow", "_input_ids", "_output_ids")
-
+            "path_to_knime_workflow", "_input_ids", "_output_ids", "_filereader_ids")
     def __init__(self, workflow_path, *, workspace_path=None, save_after_execution=False):
         if workspace_path is not None:
             try:
@@ -399,20 +454,26 @@ class LocalWorkflow:
         self._data_table_outputs = None
         self._service_table_input_nodes = None
         self._service_table_output_nodes = None
+        # NEW
+        self._file_readers_data_dir = None
+        self._service_file_reader_nodes = None
 
     def __dir__(self):
         return [ a for a in dir(self.__class__) if a[0] != "_" or a[1] == "_" ]
 
     def __enter__(self):
-        self._discover_inputoutput_nodes()
+        self._discover_inputoutput_filereader_nodes()
+        # self._discover_filereader_nodes()
         return self
 
     def __exit__(self, exc_type, exc_inst, exc_tb):
         return False
-
-    def _discover_inputoutput_nodes(self):
+    # EDITED
+    def _discover_inputoutput_filereader_nodes(self):
         self._service_table_input_nodes, self._service_table_output_nodes = \
             find_service_table_node_dirnames(self.path_to_knime_workflow)
+        self._service_file_reader_nodes = \
+            find_service_file_reader_node_dirnames(self.path_to_knime_workflow)
         self._input_ids = [
             find_node_id(self.path_to_knime_workflow, stin)
             for stin in self._service_table_input_nodes
@@ -420,10 +481,26 @@ class LocalWorkflow:
         self._output_ids = [
             find_node_id(self.path_to_knime_workflow, stin)
             for stin in self._service_table_output_nodes
+        ]        
+        self._filereader_ids = [
+            find_node_id(self.path_to_knime_workflow, stin) 
+            for stin in self._service_file_reader_nodes
         ]
         self._data_table_inputs = [None] * len(self._service_table_input_nodes)
         self._data_table_outputs = [None] * len(self._service_table_output_nodes)
+        self._file_readers_data_dir = [None] * len(self._service_file_reader_nodes)
 
+    # NEW
+    # def _discover_filereader_nodes(self):
+    # Combined with _discover_inputoutput_filereader_nodes
+        # self._service_file_reader_nodes = \
+        #     find_service_file_reader_node_dirnames(self.path_to_knime_workflow)
+        # self._filereader_ids = [
+        #     find_node_id(self.path_to_knime_workflow, stin) 
+        #     for stin in self._service_file_reader_nodes
+        # ]
+        # self._file_readers_data_dir = [None] * len(self._service_file_reader_nodes)
+    
     def execute(
             self,
             *,
@@ -437,6 +514,7 @@ class LocalWorkflow:
             self.path_to_knime_workflow,
             self._input_ids,
             self._output_ids,
+            self._filereader_ids,
             save_after_execution=self.save_after_execution,
             live_passthru_stdout_stderr=live_passthru_stdout_stderr,
             output_as_pandas_dataframes=output_as_pandas_dataframes,
@@ -450,7 +528,7 @@ class LocalWorkflow:
         list from its original length is not supported.  This list is not
         guaranteed to persist after __exit__ is called."""
         if self._service_table_input_nodes is None or self._data_table_inputs is None:
-            self._discover_inputoutput_nodes()
+            self._discover_inputoutput_filereader_nodes()
         return self._data_table_inputs
 
     @property
@@ -459,20 +537,20 @@ class LocalWorkflow:
         workflow (populated only after execution).  This list is not
         guaranteed to persist after __exit__ is called."""
         if self._service_table_output_nodes is None or self._data_table_outputs is None:
-            self._discover_inputoutput_nodes()
+            self._discover_inputoutput_filereader_nodes()
         return self._data_table_outputs
 
     @property
     def data_table_inputs_names(self):
         "View of which Container Input nodes go with which position in list."
         if self._service_table_input_nodes is None:
-            self._discover_inputoutput_nodes()
+            self._discover_inputoutput_filereader_nodes()
         return tuple(self._service_table_input_nodes)
 
     @property
     def data_table_inputs_parameter_names(self):
         if self._service_table_input_nodes is None:
-            self._discover_inputoutput_nodes()
+            self._discover_inputoutput_filereader_nodes()
         return tuple(
             find_service_table_input_node_parameter_name(
                 self.path_to_knime_workflow,
@@ -482,18 +560,35 @@ class LocalWorkflow:
         )
     # NEW
     @property
-    def data_table_outputs_annotation(self):
+    def COT_annotation(self):
         """List of outputs annotations produced from Container Output nodes in the KNIME
         workflow (populated only after execution).  This list is not
         guaranteed to persist after __exit__ is called."""
         if self._service_table_output_nodes is None:
-            self._discover_inputoutput_nodes()
+            self._discover_inputoutput_filereader_nodes()
         return list(
-            find_service_table_output_node_annotation(
+            find_service_COT_node_annotation(
                 self.path_to_knime_workflow,
                 unique_node_dirname
             )
             for unique_node_dirname in self._service_table_output_nodes
+        )
+    # NEW
+    @property
+    def file_reader_data_path(self):
+        """List of file paths of the data loaded in the workflow using 
+        CSV, File or Excel Reader nodes. This list is not
+        guaranteed to persist after __exit__ is called."""
+        if self._service_file_reader_nodes is None:
+            self._discover_filereader_nodes()
+        # for unique_node_dirname in self._service_file_reader_nodes:
+        #     print(unique_node_dirname)
+        return list(
+            find_service_file_reader_data_path(
+                self.path_to_knime_workflow,
+                unique_node_dirname
+            )
+            for unique_node_dirname in self._service_file_reader_nodes
         )
 
     def _get_workflow_svg(self):
@@ -593,13 +688,13 @@ class RemoteWorkflow(LocalWorkflow):
                 self._service_table_input_nodes is None or
                 self._data_table_inputs is None
            ):
-            self._discover_inputoutput_nodes()
+            self._discover_inputoutput_filereader_nodes()
         return self._data_table_inputs
 
     @property
     def data_table_inputs_parameter_names(self):
         if self._service_table_input_nodes is None:
-            self._discover_inputoutput_nodes()
+            self._discover_inputoutput_filereader_nodes()
         parameter_names = tuple(
             val.rsplit("-", 1)[0] for val in self._service_table_input_nodes
         )
