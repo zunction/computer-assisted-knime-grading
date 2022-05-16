@@ -1,11 +1,22 @@
 import knime
 import pandas as pd
 import numpy as np
-import os
+from pathlib import Path
+import os, re
 import glob
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
+# PARTIAL
+def collect_workflow_nodes(path_to_knime_workflow):
+    """
+    
+    """
+    nodes = []
+    for settings_filepath in Path(path_to_knime_workflow).glob("*/settings.xml"):
+        node = re.split('[\(\)]',os.path.basename(settings_filepath.parent))[0].strip()
+        nodes.append(node)    
 
+    return nodes
 
 def collect_workflow_outputs(path_to_knime_workflow):
     """
@@ -105,10 +116,12 @@ class workflowgrader():
         # retrieve abspath of workflows to be graded
         self.sub_workflows = \
         glob.glob(os.path.join(gradespace,'[0-9]*'))
-        
         # assume that workflows are named using student ids
         self.student_ids = [os.path.basename(p) for p in self.sub_workflows]
+
+        # reference based on reference workflow
         self.ref_output = collect_workflow_outputs(os.path.join(gradespace,ref_workflow))
+        self.ref_nodes = collect_workflow_nodes(os.path.join(gradespace,ref_workflow))
         self.question_keys = self.ref_output.keys()
         
         # outputs from submissions
@@ -125,10 +138,23 @@ class workflowgrader():
         
     def __len__(self):
         """
-        Returns the number of 
+        Returns the number of workflows that are graded in the workflowgrader.
         """
         return len(self.sub_outputs)
-    
+    # PARTIAL
+    def accumulate_workflow_nodes(self):
+        """
+
+        """
+
+        nodes = []
+
+        for wfp in tqdm(self.sub_workflows):
+            nodes.append(collect_workflow_nodes(wfp))
+            # nodes_in_workflow = collect_workflow_nodes(wfp)
+        return dict(zip(self.student_ids,nodes))
+
+
     def accumulate_workflow_outputs(self):
         """
         Accumulates the outputs from the workflows in gradspace.
@@ -228,7 +254,16 @@ class workflowgrader():
         self.check_var_results = dict(zip(self.ref_output.keys(),var_check_results))
         return self.check_var_results
 
-
+    def check_data(self):
+        """
+        
+        """
+        err_data_col = []
+    
+        for v in df1.drop(columns=missing_var).columns:
+            if not df1[v].equals(df2[v]):
+                err_data_col.append(v)
+        return err_data_col
 
 def compare_dict_df(d1,d2):
     """
