@@ -78,41 +78,6 @@ def assisted_question_inference(d, missing, foreign):
             del d[foreign[0]]
         
 
-
-
-        # to generate feedbacks later
-        #     feedback = "Expected question {} is missing but received foreign {} instead. Answer for foreign question is inferred as answer for missing question.".format(missing,foreign)
-        # else:
-        #     feedback = "Expected questions {} are missing but received {} instead".format(missing,foreign)
-        # return feedback
-
-# def compare_df_varnames(df1, df2):
-#     """
-#     Compares the variable names of the dataframes.
-#     The dataframe df1 is the reference which df2 is compared against. 
-    
-#     Note that this function does not commutes.
-
-#     Args:
-#         df1, df2: dataframes extracted from COT nodes.
-#     Returns:
-#         missing_vars: list of variable names which are in df1 but not in df2.
-#         matched_vars: list of variable names which are in df1 and also in df2.
-        
-#     """
-#     df1_col = df1.columns
-#     df2_col = df2.columns
-#     missing_vars = []
-#     foreign_vars = []
-#     for varname in df1_col:
-#         if not (varname in df2_col):
-#             missing_vars.append(varname)
-#     for varname in df2_col:
-#         if not (varname in df1_col):
-#             foreign_vars.append(varname)
-#     return missing_vars, foreign_vars
-
-
 class workflowgrader():
     """
     
@@ -257,13 +222,11 @@ class workflowgrader():
         
         # for question q 
         for q in tqdm(self.ref_output.keys()):
-            print(q)
             
             var_check_result = []
 
             # for student s
             for s in self.student_ids:
-                print(s)
 
                 missing_vars = []
                 incorrect_var_dtype = []
@@ -274,31 +237,22 @@ class workflowgrader():
                     self.sub_outputs[s][q]
                 except:
                     # if not we label it as ungraded and move on to the next student
-                    var_check_result.append('UNGRADED')
+                    missing_vars = ['UNGRADED']
+                    incorrect_var_dtype = ['UNGRADED']
+                    var_check_result.append((missing_vars,incorrect_var_dtype))
                     
                     continue
                 # when question q is available iterate over target variables and target dtypes
                 for tar_var, tar_dtype in zip(self.ref_output[q].columns,self.ref_output[q].dtypes):
-                    print(tar_var)
-                    # print(cmp_var_dtype(s, q, tar_var))
                     try:
                         # check if variable dtype can be accessed and equal to target variable dtype
 
-                        # self.sub_outputs[s][q][tar_var]
                         if not self.cmp_var_dtype(s, q, tar_var):
                             incorrect_var_dtype.append((tar_var,self.sub_outputs[s][q][tar_var].dtype))
-                            # self.ref_output[q][v].dtype == self.sub_outputs[s][q][v].dtype
-                        
 
-
-                        # if not self.sub_outputs[s][q][tar_var].dtype == tar_dtype:
-                        #     # incorrect variable dtype is appended to list
-                        #     incorrect_var_dtype.append((tar_var,self.sub_outputs[s][q][tar_var].dtype))
-                        #     # print('variable {} has different {} dtype from expected {} dtype.'.format(tar_var,self.sub_outputs[s][q][tar_var].dtype,tar_dtype))
                     except:
                         # if variable dtype cannot be accessed, variable is taken to be missing
                         missing_vars.append(tar_var)
-                        # print('{} variable is not found in submission.'.format(tar_var))
                 
                 var_check_result.append((missing_vars,incorrect_var_dtype))
 
@@ -324,7 +278,6 @@ class workflowgrader():
                 try:
                     self.sub_outputs[s][q]
                 except:
-                    # print('Grading not done for {} as it was not submitted by {}.'.format(q,s))
                     data_check_result.append('UNGRADED')
                     continue
                 
@@ -339,60 +292,38 @@ class workflowgrader():
         self.check_data_results = dict(zip(self.ref_output.keys(),data_check_results))
         return self.check_data_results
 
+    def generate_csv(self):
+        """
 
-# def compare_dict_df(d1,d2):
-#     """
-#     Checks equality the dataframes in the dictionaries d1, d2 based
-#     on the keys using the `.equals()` pandas function. The dictionary d1 
-#     is the reference which d2 is compared against. 
-    
-#     Note that this function does not commutes.
-    
-#     Args:
-#         d1, d2: dictionaries of form {node_annotation: dataframe_from_COT}.
-#     Returns:
-#         err_df: list of output annotations with not equal dataframe.
-#     """
-#     err_df = []
-#     for k in d2:
-#         if not (d2[k].equals(d1[k])):
-#             err_df.append(k)
-#     return err_df
+        """
+        # file path dataframe
+        fp_df = pd.DataFrame.from_dict(wfg.sub_data_paths, orient='index')
+
+        # check question dataframe
+        cqr_df = pd.DataFrame.from_dict(cqr,orient='index',columns=['missing_questions','foreign_questions'])
+        cqr_df['question_completion'] = cqr_df['missing_questions'].apply(lambda x : 1-(len(x)/len(wfg.ref_output.keys())))
+
+        # check variable dataframe
+        cvr_df = pd.DataFrame.from_dict(cvr)
+        for i in cvr_df.columns:
+            cvr_df[[i+'_missing_var',i+'_incorrect_var_dtype']] = pd.DataFrame(cvr_df[i].to_list(),index=cvr_df.index)
+            del cvr_df[i]
+        
+
+        
+        # check data dataframe
+        cdr_df = pd.DataFrame.from_dict(cdr)
+        for i in cdr_df.columns:
+            cdr_df[i+'_incorrect_var_data'] = cdr_df[i]
+            del cdr_df[i]
+        
+        # node distribution dataframe
+        n_df = pd.DataFrame.from_dict(wfg.sub_node_dists,orient='index')
+        n_df['total_node_count'] = n_df.sum(axis=1)
 
 
-# def compare_dtypes(df1, df2, missing_var, foreign_var):
-#     """
-#     Returns a list of tuples which describe the variable name together
-#     with the expected and incorrect datatype.
-    
-#     Note that this function does not commutes.
 
-#     Args:
-#         df1: dataframe output which is reference
-#         df2: dataframe output from a submission
-#         missing_var: list of missing variables from df1
-#         foreign_var: list of foreign variables in df2
-    
-#     Returns:
-#         var_incorrect_dtype: list of 3-tuple of the form (variable_name, expected_dtype, actual_dtype)
-#     """
-#     df1 = df1.drop(columns=missing_var)
-#     df2 = df2.drop(columns=foreign_var)
-#     var_incorrect_dtype = []
-#     for v in df1.columns:
-#         if not (df1.dtypes[v] == df2.dtypes[v]):
-#             var_incorrect_dtype.append((v,df1.dtypes[v],df2.dtypes[v]))
-#     return var_incorrect_dtype
 
-# def compare_df_col(df1, df2, missing_var):
-#     """
-#     Returns a list of variable 
-#     """
-#     err_data_col = []
-    
-#     for v in df1.drop(columns=missing_var).columns:
-#         if not df1[v].equals(df2[v]):
-#             err_data_col.append(v)
-#     return err_data_col
 
-  
+
+

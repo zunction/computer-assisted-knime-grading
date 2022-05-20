@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import os
 import argparse
-import tqdm
+# import tqdm
+from utils import workflowgrader
 
 args.model_workflow
 args.executable_path
@@ -21,5 +22,13 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    wfg = workflowgrader(args.grading_workspace,args.ref_workflow)
+
+    wfg.accumulate_workflow_nodes()
+
+    wfg.accumulate_workflow_outputs()
+
+    wfg.check_questions()
 
     
