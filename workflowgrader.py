@@ -9,10 +9,11 @@ from utils import workflowgrader
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Grades KNIME workflows.')
-    parser.add_argument('--exec-path', type=argparse.FileType('r'), default=None, help='Not required unless KNIME is installed in non-standard location.')
+    parser.add_argument('--exec-path', default=None, help='Not required unless KNIME is installed in non-standard location.')
     parser.add_argument('--workspace', help='KNIME workspace with the workflows to be graded.')
     parser.add_argument('--ref-workflow', help='Name of the reference workflow to be used.')
     parser.add_argument('--save-name',default='out' ,help='Name of grading results to be saved as.')
+    parser.add_argument('--save-dir',default=None, help='Directory to save the grading results to. Saved to workspace if not provided.')
    
     args = parser.parse_args()
     
@@ -40,9 +41,13 @@ def main():
     _ = wfg.check_data()
 
     args.save_name = args.save_name+'.csv'
-    wfg.generate_csv(save_dir=args.workspace, save_as=args.save_name)
 
-    print('\n Grading results {} is saved at {}'.format(args.save_name,args.workspace))
+    if not args.save_dir:
+        wfg.generate_csv(save_dir=args.workspace, save_as=args.save_name)
+        print('\n Grading results {} is saved at {}'.format(args.save_name,args.workspace))
+    else:
+        wfg.generate_csv(save_dir=args.save_dir, save_as=args.save_name)
+        print('\n Grading results {} is saved at {}'.format(args.save_name,args.save_dir))
 
 if __name__ == '__main__':
     main()    
