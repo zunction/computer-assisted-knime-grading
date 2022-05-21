@@ -21,13 +21,18 @@ def collect_workflow_nodes(path_to_knime_workflow):
 
     return dict(zip(*np.unique(nodes,return_counts=True)))
 
-def collect_workflow_outputs(path_to_knime_workflow):
+def collect_workflow_outputs(path_to_knime_workflow, exec_path = None):
     """
     Collect all the outputs of the workflow in the provided path to a KNIME workflow.
     Returns a dictionary where (key,value) = (node annotation,output table)
     """
-    wf = knime.Workflow(path_to_knime_workflow)
-    wf.execute()
+    if not None:
+        wf = knime.Workflow(path_to_knime_workflow)
+        wf.execute()        
+    else:
+        knime.executable_path = exec_path
+        wf = knime.Workflow(path_to_knime_workflow)
+        wf.execute()
 
     # to extract file reader data path at in this function
     # wf.file_reader_data_path
@@ -77,12 +82,24 @@ def assisted_question_inference(d, missing, foreign):
             d[missing[0]] = d[foreign[0]]
             del d[foreign[0]]
         
-
+def move_col_to_front(df, suffix='_completion'):
+    """
+    Move columns in a dataframe with a given suffix to the 
+    left of a dataframe.    
+    """
+    move_col = []
+    for c in df.columns:
+        if suffix in c:
+            move_col.append(c)
+    move_col.reverse()
+    for c in move_col:
+        first_column = df.pop(c)
+        df.insert(0, c, first_column)
 class workflowgrader():
     """
     
     """
-    def __init__(self, gradespace, ref_workflow):
+    def __init__(self, gradespace, ref_workflow, exec_path):
         # directory with the workflows to be graded    
         self.gradespace = gradespace
         # workflow to be used as a reference for grading
@@ -92,6 +109,9 @@ class workflowgrader():
         glob.glob(os.path.join(gradespace,'[0-9]*'))
         # assume that workflows are named using student ids
         self.student_ids = [os.path.basename(p) for p in self.sub_workflows]
+
+        # knime executable path
+        self.exec_path = exec_path
 
         # reference based on reference workflow
         self.ref_output, _ = collect_workflow_outputs(os.path.join(gradespace,ref_workflow))
@@ -167,7 +187,7 @@ class workflowgrader():
         data_paths = []
 
         for wfp in tqdm(self.sub_workflows):
-            sub_output, data_path = collect_workflow_outputs(wfp)
+            sub_output, data_path = collect_workflow_outputs(wfp,self.exec_path)
             sub_outputs.append(sub_output)
             data_paths.append(data_path)
         
@@ -278,7 +298,8 @@ class workflowgrader():
                 try:
                     self.sub_outputs[s][q]
                 except:
-                    data_check_result.append('UNGRADED')
+                    incorrect_var_data = ['UNGRADED']
+                    data_check_result.append(incorrect_var_data)
                     continue
                 
                 for tar_var in self.ref_output[q].columns:
@@ -292,34 +313,46 @@ class workflowgrader():
         self.check_data_results = dict(zip(self.ref_output.keys(),data_check_results))
         return self.check_data_results
 
-    def generate_csv(self):
+    def generate_csv(self, save_dir, save_as='out.csv'):
         """
-
+        Processes the data collected into a single pandas dataframe.
         """
-        # file path dataframe
-        fp_df = pd.DataFrame.from_dict(wfg.sub_data_paths, orient='index')
-
-        # check question dataframe
-        cqr_df = pd.DataFrame.from_dict(cqr,orient='index',columns=['missing_questions','foreign_questions'])
-        cqr_df['question_completion'] = cqr_df['missing_questions'].apply(lambda x : 1-(len(x)/len(wfg.ref_output.keys())))
-
-        # check variable dataframe
-        cvr_df = pd.DataFrame.from_dict(cvr)
+        # filepath df
+        fp_df = pd.Series(self.sub_data_paths,name='data_filepaths')
+        # check question df
+        cqr_df = pd.DataFrame.from_dict(self.check_question_results,orient='index',columns=['missing_questions','foreign_questions'])
+        cqr_df['question_completion'] = cqr_df['missing_questions'].apply(lambda x : 1-(len(x)/len(self.ref_output.keys())))
+        # check variables df
+        cvr_df = pd.DataFrame.from_dict(self.check_var_results)
         for i in cvr_df.columns:
+            cvr_df[i+'_var_completion'] = cvr_df[i].apply(lambda x : 1-(len(x[0])/len(self.ref_output[i].columns)) if 'UNGRADED' not in x[0] else x[0][0])
+            cvr_df[i+'_dtype_completion'] = cvr_df[i].apply(lambda x : 1-(len(x[0])/len(self.ref_output[i].columns)) if 'UNGRADED' not in x[0] else x[0][0])
             cvr_df[[i+'_missing_var',i+'_incorrect_var_dtype']] = pd.DataFrame(cvr_df[i].to_list(),index=cvr_df.index)
-            del cvr_df[i]
-        
-
-        
-        # check data dataframe
-        cdr_df = pd.DataFrame.from_dict(cdr)
+            del cvr_df[i] 
+        # check data df
+        cdr_df = pd.DataFrame.from_dict(self.check_data_results)
         for i in cdr_df.columns:
-            cdr_df[i+'_incorrect_var_data'] = cdr_df[i]
-            del cdr_df[i]
-        
-        # node distribution dataframe
-        n_df = pd.DataFrame.from_dict(wfg.sub_node_dists,orient='index')
-        n_df['total_node_count'] = n_df.sum(axis=1)
+            cdr_df[i+'_data_completion'] = cdr_df[i].apply(lambda x : 1-(len(x)/len(self.ref_output[i].columns)) if x!='UNGRADED' else x)
+            cdr_df[i+'_incorrect_var_values'] = cdr_df[i]
+            del cdr_df[i] 
+
+        # node distribution df
+        n_df = pd.DataFrame.from_dict(self.sub_node_dists,orient='index')
+        n_df['node_count'] = n_df.sum(axis=1)
+        n_df['node_completion'] = n_df['node_count']/sum(self.ref_node_dist.values())
+
+
+        # combined df
+        combined_df = pd.merge(cqr_df,cvr_df,left_index=True,right_index=True)
+        combined_df = pd.merge(combined_df,cdr_df,left_index=True,right_index=True,suffixes=('_var_dtype','_data'))
+        combined_df = pd.merge(combined_df,n_df,left_index=True,right_index=True,suffixes=('_var_dtype','_data'))
+
+        # move columns
+        move_col_to_front(combined_df)
+
+        # saving dataframe to csv file 
+        combined_df.to_csv(os.path.join(save_dir,save_as))
+
 
 
 

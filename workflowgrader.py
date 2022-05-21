@@ -3,18 +3,16 @@ import pandas as pd
 import numpy as np
 import os
 import argparse
-# import tqdm
+from datetime import datetime
 from utils import workflowgrader
 
-args.model_workflow
-args.executable_path
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Grades KNIME workflows.')
-    parser.add_argument('--exec-path',type='str', help='not required unless KNIME is installed in non-standard location.')
-    parser.add_argument('--ref-workflow',default='C5_Lab5_Task1_Data_prep_clean_with_COT',type='str',help='path to the workflow which is the grading is based on.')
-    parser.add_argument('--grading-workspace',default='C:\Users\s11006381\knime-workspace\gradespace',type='str',help='workspace with workflows to be graded.')
-    parser.add_argument('--grading-results', default='C:\Users\s11006381\Desktop',type='str',help='location to save the results of the graded workflows.')
+    parser.add_argument('--exec-path', type=argparse.FileType('r'), default=None, help='Not required unless KNIME is installed in non-standard location.')
+    parser.add_argument('--workspace', help='KNIME workspace with the workflows to be graded.')
+    parser.add_argument('--ref-workflow', help='Name of the reference workflow to be used.')
+    parser.add_argument('--save-name',default='out' ,help='Name of grading results to be saved as.')
    
     args = parser.parse_args()
     
@@ -23,12 +21,28 @@ def parse_args():
 def main():
     args = parse_args()
 
-    wfg = workflowgrader(args.grading_workspace,args.ref_workflow)
-
-    wfg.accumulate_workflow_nodes()
-
-    wfg.accumulate_workflow_outputs()
-
-    wfg.check_questions()
-
+    print('Initialising workflowgrader...')
+    wfg = workflowgrader(args.workspace,args.ref_workflow, args.exec_path)
     
+    print('\n Collecting nodes used in the submitted workflows...')
+    _ = wfg.accumulate_workflow_nodes()
+
+    print('\n Collecting data outputs of the submitted workflows...')
+    _, _ = wfg.accumulate_workflow_outputs()
+
+    print('\n Checking submitted questions...')
+    _ = wfg.check_question()
+
+    print('\n Checking variables of the outputs...')
+    _ = wfg.check_variable()
+
+    print('\n Checking data of the outputs...')
+    _ = wfg.check_data()
+
+    args.save_name = args.save_name+'.csv'
+    wfg.generate_csv(save_dir=args.workspace, save_as=args.save_name)
+
+    print('\n Grading results {} is saved at {}'.format(args.save_name,args.workspace))
+
+if __name__ == '__main__':
+    main()    
