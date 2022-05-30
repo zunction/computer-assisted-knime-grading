@@ -6,6 +6,9 @@ import os, re
 import glob
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
+import sys, traceback, logging
+
+logging.basicConfig(level=logging.ERROR)
 
 
 def collect_workflow_nodes(path_to_knime_workflow):
@@ -33,10 +36,15 @@ def collect_workflow_outputs(path_to_knime_workflow, exec_path = None):
         knime.executable_path = exec_path
         wf = knime.Workflow(path_to_knime_workflow)
         wf.execute()
-
-    # to extract file reader data path at in this function
-    # wf.file_reader_data_path
-    return dict(zip(wf.COT_annotation,wf.data_table_outputs)), wf.file_reader_data_path
+    if all([e == None for e in wf.COT_annotation]):
+        return dict(zip(list(range(len(wf.COT_annotation))),wf.data_table_outputs)), wf.file_reader_data_path
+    else:
+        return dict(zip(wf.COT_annotation,wf.data_table_outputs)), wf.file_reader_data_path
+    # wf.COT_annotation = list(range(len(wf.COT_annotation)))
+    # print(wf.COT_annotation)
+    # # to extract file reader data path at in this function
+    # # wf.file_reader_data_path
+    # return dict(zip(wf.COT_annotation,wf.data_table_outputs)), wf.file_reader_data_path
 
 def compare_COT_annotation(d1,d2):
     """
@@ -55,11 +63,15 @@ def compare_COT_annotation(d1,d2):
     foreign_ann = []
     missing_ann = []
     for k in d1:
-        if not (k in list(d2.keys())):
+        if k not in list(d2.keys()):
+        # if not (k in list(d2.keys())):
             missing_ann.append(k)
     for k in d2:
-        if not (k in list(d1.keys())):
+        if k not in list(d1.keys()):
+        # if not (k in list(d1.keys())):
             foreign_ann.append(k)
+            # print(d1.keys())
+            # print(foreign_ann)
     return missing_ann, foreign_ann    
 
 def assisted_question_inference(d, missing, foreign):
@@ -187,9 +199,17 @@ class workflowgrader():
         data_paths = []
 
         for wfp in tqdm(self.sub_workflows):
-            sub_output, data_path = collect_workflow_outputs(wfp,self.exec_path)
-            sub_outputs.append(sub_output)
-            data_paths.append(data_path)
+            try:
+                sub_output, data_path = collect_workflow_outputs(wfp,self.exec_path)
+                sub_outputs.append(sub_output)
+                data_paths.append(data_path)
+            except:
+                logging.exception('Error encountered with {}'.format(wfp))
+                sub_outputs.append({})
+                data_paths.append('')
+                # print('Error encountered with {}'.format(wfp))
+            # sub_outputs.append(sub_output)
+            # data_paths.append(data_path)
         
         self.sub_outputs = dict(zip(self.student_ids,sub_outputs))
         self.sub_data_paths = dict(zip(self.student_ids,data_paths))
@@ -332,7 +352,7 @@ class workflowgrader():
         # check data df
         cdr_df = pd.DataFrame.from_dict(self.check_data_results)
         for i in cdr_df.columns:
-            cdr_df[i+'_data_completion'] = cdr_df[i].apply(lambda x : 1-(len(x)/len(self.ref_output[i].columns)) if x!='UNGRADED' else x)
+            cdr_df[i+'_data_completion'] = cdr_df[i].apply(lambda x : 1-(len(x)/len(self.ref_output[i].columns)) if x!=['UNGRADED'] else x[0])
             cdr_df[i+'_incorrect_var_values'] = cdr_df[i]
             del cdr_df[i] 
 
