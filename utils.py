@@ -8,7 +8,9 @@ from tqdm import tqdm
 import xml.etree.ElementTree as ET
 import sys, traceback, logging
 
-logging.basicConfig(level=logging.ERROR)
+# logging.basicConfig(level=logging.ERROR)
+# logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+
 
 
 def collect_workflow_nodes(path_to_knime_workflow):
@@ -369,6 +371,7 @@ class workflowgrader():
 
         # move columns
         move_col_to_front(combined_df)
+        combined_df.reset_index(inplace=True)
 
         # saving dataframe to csv file 
         combined_df.to_csv(os.path.join(save_dir,save_as))

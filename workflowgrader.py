@@ -6,13 +6,16 @@ import argparse
 from datetime import datetime
 from utils import workflowgrader
 import time
+import sys, traceback, logging
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Grades KNIME workflows.')
+    parser.add_argument('workspace', help='KNIME workspace with the workflows to be graded.')
+    parser.add_argument('ref_workflow', help='Name of the reference workflow to be used.')
     parser.add_argument('--exec-path', default=None, help='Not required unless KNIME is installed in non-standard location.')
-    parser.add_argument('--workspace',required=True, help='KNIME workspace with the workflows to be graded.')
-    parser.add_argument('--ref-workflow',required=True, help='Name of the reference workflow to be used.')
+    # parser.add_argument('--workspace',required=True, help='KNIME workspace with the workflows to be graded.')
+    # parser.add_argument('--ref-workflow',required=True, help='Name of the reference workflow to be used.')
     parser.add_argument('--save-name',default=None ,help='Name of grading results to be saved as.')
     parser.add_argument('--save-dir',default=None, help='Directory to save the grading results to. Saved to workspace if not provided.')
    
@@ -27,10 +30,16 @@ def current_datetime():
 def main():
     args = parse_args()
 
+    if not args.save_name:
+        args.save_name = os.path.basename(args.workspace)
+    if not args.save_dir:
+        args.save_dir = args.workspace
+
+    logging.basicConfig(filename=os.path.join(args.save_dir,args.save_name+'.log'), filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
     print('\n {} {} - Start initialisation of workflowgrader:'.format(*current_datetime()))
-    print('  Workspace         : {}'.format(args.workspace))
-    print('  Reference workflow: {}'.format(args.ref_workflow))
+    print('  WORKSPACE         : {}'.format(args.workspace))
+    print('  REFERENCE WORKFLOW: {}'.format(args.ref_workflow))
     wfg = workflowgrader(args.workspace,args.ref_workflow, args.exec_path)
     
     print('\n {} {} - Collect nodes used in the submitted workflows'.format(*current_datetime()))
@@ -48,17 +57,21 @@ def main():
     print('\n {} {} - Check data of the outputs'.format(*current_datetime()))
     _ = wfg.check_data()
 
-    if not args.save_name:
-        args.save_name = os.path.basename(args.workspace)
+    # if not args.save_name:
+    #     args.save_name = os.path.basename(args.workspace)
 
     args.save_name = args.save_name+'.csv'
 
-    if not args.save_dir:
-        wfg.generate_csv(save_dir=args.workspace, save_as=args.save_name)
-        print('\n {} {} - Results {} is saved at {}'.format(*current_datetime(),args.save_name,args.workspace))
-    else:
-        wfg.generate_csv(save_dir=args.save_dir, save_as=args.save_name)
-        print('\n {} {} - Results {} is saved at {}'.format(*current_datetime(),args.save_name,args.save_dir))
+    wfg.generate_csv(save_dir=args.save_dir, save_as=args.save_name)
+    print('\n {} {} - Results {} is saved at {}'.format(*current_datetime(),args.save_name,args.save_dir))
+
+
+    # if not args.save_dir:
+    #     wfg.generate_csv(save_dir=args.workspace, save_as=args.save_name)
+    #     print('\n {} {} - Results {} is saved at {}'.format(*current_datetime(),args.save_name,args.workspace))
+    # else:
+    #     wfg.generate_csv(save_dir=args.save_dir, save_as=args.save_name)
+    #     print('\n {} {} - Results {} is saved at {}'.format(*current_datetime(),args.save_name,args.save_dir))
 
     print('\n A total {} workflows were graded in {} seconds'.format(len(wfg),round(time.time() - start_time,0))) 
 
