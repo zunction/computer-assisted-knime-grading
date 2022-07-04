@@ -349,12 +349,24 @@ def run_workflow_using_multiple_service_tables(
             " ".join(option_flags_output_service_table_nodes),
         ])
         logging.info(f"knime invocation: {shell_command}")
+        startupinfo = None
 
+        # to suppress popout window
+        if os.name == "nt":
+            # Prevent cmd.exe window from popping up
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= (
+                subprocess.STARTF_USESTDHANDLES | subprocess.STARTF_USESHOWWINDOW
+            )
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+        
         result = subprocess.run(
             shell_command,
             shell=True if os.name != "nt" else False,
+            # stdout=subprocess.DEVNULL,
             stdout=subprocess.PIPE if not live_passthru_stdout_stderr else None,
             stderr=subprocess.PIPE if not live_passthru_stdout_stderr else None,
+            startupinfo=startupinfo
         )
         logging.info(f"exit code from KNIME execution: {result.returncode}")
 
