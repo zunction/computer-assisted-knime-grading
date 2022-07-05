@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Grades KNIME workflows.')
     parser.add_argument('workspace', help='KNIME workspace with the workflows to be graded.')
     parser.add_argument('ref_workflow', help='Name of the reference workflow to be used.')
-    parser.add_argument('-c','--classes', default=None, nargs='*', help='classes to be graded in the workspace')
+    # parser.add_argument('-c','--classes', default=None, nargs='*', help='classes to be graded in the workspace')
     parser.add_argument('--exec-path', default=None, help='Not required unless KNIME is installed in non-standard location.')
     # parser.add_argument('--workspace',required=True, help='KNIME workspace with the workflows to be graded.')
     # parser.add_argument('--ref-workflow',required=True, help='Name of the reference workflow to be used.')
@@ -27,6 +27,27 @@ def parse_args():
 def current_datetime():
     now = datetime.now()
     return now.strftime('%d-%m-%Y'), now.strftime('%H:%M:%S')
+
+def detect_workflowset(workspace):
+    """
+    Scans for workflowsets (folders containing workflow) in the give knime workspace. 
+    Returns a (possibly empty) list of fullpaths to the detected workflowsets.
+    """
+    fullpath_workflowsets = []
+
+    for i in os.listdir(workspace):
+        if os.path.isdir(os.path.join(workspace,i)) and i != 'Example Workflows':
+            wfs = os.path.exists(os.path.join(os.path.join(workspace,i),'workflowset.meta'))
+            wfsvg = os.path.exists(os.path.join(os.path.join(workspace,i),'workflow.svg'))
+            if  wfs and not wfsvg:
+                print('detected {} workflowset'.format(i.upper()))
+                fullpath_workflowsets.append(os.path.join(workspace,i))
+
+    return fullpath_workflowsets
+
+def process_workflowset(workflowset):
+    
+
 
 def main():
     args = parse_args()
@@ -47,11 +68,7 @@ def main():
     # print('\n {} {} - Start initialisation of workflowgrader:'.format(*current_datetime()))
     wfg = workflowgrader(args.workspace,args.ref_workflow, args.exec_path)
 
-    # if args.classes:
-    #     print('\n {} {} - Verifying classes'.format(*current_datetime()))
-    #     for c in args.classes:
-    #         if c in os.listdir(args.workspace):
-    #             print('{} ')
+    fullpath_workflowsets = detect_workflowset(args.workspace)
 
     
     print('\n  {} {} - Extract nodes used in the submitted workflows'.format(*current_datetime()))

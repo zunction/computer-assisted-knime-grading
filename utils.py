@@ -114,7 +114,7 @@ class workflowgrader():
     """
     
     """
-    def __init__(self, gradespace, ref_workflow, exec_path):
+    def __init__(self, gradespace, ref_workflow, exec_path, workflowsets):
         # directory with the workflows to be graded    
         self.gradespace = gradespace
         # workflow to be used as a reference for grading
@@ -127,6 +127,9 @@ class workflowgrader():
 
         # knime executable path
         self.exec_path = exec_path
+
+        # list of fullpaths to folders with workflows
+        self.workflowsets = workflowsets
 
         # reference based on reference workflow
         self.ref_output, _ = collect_workflow_outputs(os.path.join(gradespace,ref_workflow))
@@ -157,20 +160,23 @@ class workflowgrader():
 
     def cmp_var_dtype(self, s, q, v):
         """
-        
+        Comparison of the variable datatype for question q and variable v of
+        sub_outputs by submission s to ref_output to return a boolean value.
         """
         return self.ref_output[q][v].dtype == self.sub_outputs[s][q][v].dtype
 
     def cmp_var_data(self, s, q, v):
         """
-
+        Comparison of the variable data for question q and variable v of
+        sub_outputs by submission s to ref_output using pandas .equals 
+        function to return a boolean value.
         """
         return self.ref_output[q][v].equals(self.sub_outputs[s][q][v])
 
     
     def accumulate_workflow_nodes(self):
         """
-
+        Extracts the nodes used in the submitted workflows.
         """
 
         nodes = []
