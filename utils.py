@@ -96,7 +96,7 @@ def assisted_question_inference(d, missing, foreign):
             d[missing[0]] = d[foreign[0]]
             del d[foreign[0]]
         
-def move_col_to_front(df, suffix='_completion'):
+def move_col_to_front(df, suffix='_summary'):
     """
     Move columns in a dataframe with a given suffix to the 
     left of a dataframe.    
@@ -109,6 +109,7 @@ def move_col_to_front(df, suffix='_completion'):
     for c in move_col:
         first_column = df.pop(c)
         df.insert(0, c, first_column)
+
 class workflowgrader():
     """
     
@@ -341,33 +342,37 @@ class workflowgrader():
         """
         # filepath df
         fp_df = pd.Series(self.sub_data_paths,name='data_filepaths')
+
         # check question df
         cqr_df = pd.DataFrame.from_dict(self.check_question_results,orient='index',columns=['missing_questions','foreign_questions'])
-        cqr_df['question_completion'] = cqr_df['missing_questions'].apply(lambda x : 1-(len(x)/len(self.ref_output.keys())))
+        cqr_df['question_summary'] = cqr_df['missing_questions'].apply(lambda x : 1-(len(x)/len(self.ref_output.keys())))
+
         # check variables df
         cvr_df = pd.DataFrame.from_dict(self.check_var_results)
         for i in cvr_df.columns:
-            cvr_df[i+'_var_completion'] = cvr_df[i].apply(lambda x : 1-(len(x[0])/len(self.ref_output[i].columns)) if 'UNGRADED' not in x[0] else x[0][0])
-            cvr_df[i+'_dtype_completion'] = cvr_df[i].apply(lambda x : 1-(len(x[0])/len(self.ref_output[i].columns)) if 'UNGRADED' not in x[0] else x[0][0])
+            cvr_df[i+'_var_summary'] = cvr_df[i].apply(lambda x : 1-(len(x[0])/len(self.ref_output[i].columns)) if 'UNGRADED' not in x[0] else x[0][0])
+            cvr_df[i+'_dtype_summary'] = cvr_df[i].apply(lambda x : 1-(len(x[0])/len(self.ref_output[i].columns)) if 'UNGRADED' not in x[0] else x[0][0])
             cvr_df[[i+'_missing_var',i+'_incorrect_var_dtype']] = pd.DataFrame(cvr_df[i].to_list(),index=cvr_df.index)
             del cvr_df[i] 
+
         # check data df
         cdr_df = pd.DataFrame.from_dict(self.check_data_results)
         for i in cdr_df.columns:
-            cdr_df[i+'_data_completion'] = cdr_df[i].apply(lambda x : 1-(len(x)/len(self.ref_output[i].columns)) if x!=['UNGRADED'] else x[0])
+            cdr_df[i+'_data_summary'] = cdr_df[i].apply(lambda x : 1-(len(x)/len(self.ref_output[i].columns)) if x!=['UNGRADED'] else x[0])
             cdr_df[i+'_incorrect_var_values'] = cdr_df[i]
             del cdr_df[i] 
 
         # node distribution df
         n_df = pd.DataFrame.from_dict(self.sub_node_dists,orient='index')
         n_df['node_count'] = n_df.sum(axis=1)
-        n_df['node_completion'] = n_df['node_count']/sum(self.ref_node_dist.values())
+        n_df['node_summary'] = n_df['node_count']/sum(self.ref_node_dist.values())
 
 
         # combined df
         combined_df = pd.merge(cqr_df,cvr_df,left_index=True,right_index=True)
         combined_df = pd.merge(combined_df,cdr_df,left_index=True,right_index=True,suffixes=('_var_dtype','_data'))
         combined_df = pd.merge(combined_df,n_df,left_index=True,right_index=True,suffixes=('_var_dtype','_data'))
+        combined_df = pd.merge(combined_df,fp_df,left_index=True,right_index=True)
 
         # move columns
         move_col_to_front(combined_df)
