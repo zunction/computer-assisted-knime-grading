@@ -7,11 +7,21 @@ import glob
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
 import sys, traceback, logging
+from datetime import datetime
+import itertools
 
 # logging.basicConfig(level=logging.ERROR)
 # logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
+def display_process_start(verbose):
+    print('  {} {} - {}'.format(*current_datetime(),verbose))
 
+def display_process_output(verbose):
+    print('      -> {}'.format(verbose))
+
+def current_datetime():
+    now = datetime.now()
+    return now.strftime('%d-%m-%Y'), now.strftime('%H:%M:%S')
 
 def collect_workflow_nodes(path_to_knime_workflow):
     """
@@ -114,16 +124,20 @@ class workflowgrader():
     """
     
     """
-    def __init__(self, gradespace, ref_workflow, exec_path, workflowsets):
+    def __init__(self, workspace, ref_workflow, exec_path, workflowsets):
         # directory with the workflows to be graded    
-        self.gradespace = gradespace
+        self.workspace = workspace
         # workflow to be used as a reference for grading
         self.ref_workflow = ref_workflow
+        # fullpaths of workflowsets to iterate, if None, fullpath to workspace is provided
+        self.fullpath_workflowsets = [workspace] if not workflowsets else [os.path.join(workspace,i) for i in workflowsets]
+
         # retrieve abspath of workflows to be graded
         self.sub_workflows = \
-        glob.glob(os.path.join(gradespace,'[0-9]*'))
+        glob.glob(os.path.join(workspace,'[0-9]*'))
         # assume that workflows are named using student ids
-        self.student_ids = [os.path.basename(p) for p in self.sub_workflows]
+        # self.student_ids = [os.path.basename(p) for p in self.sub_workflows]
+        self.student_ids = {}
 
         # knime executable path
         self.exec_path = exec_path
@@ -132,56 +146,266 @@ class workflowgrader():
         self.workflowsets = workflowsets
 
         # reference based on reference workflow
-        self.ref_output, _ = collect_workflow_outputs(os.path.join(gradespace,ref_workflow))
-        self.ref_node_dist = collect_workflow_nodes(os.path.join(gradespace,ref_workflow))
+        self.ref_output, _ = collect_workflow_outputs(os.path.join(workspace,ref_workflow))
+        self.ref_node_dist = collect_workflow_nodes(os.path.join(workspace,ref_workflow))
         self.question_keys = self.ref_output.keys()
         
         # outputs from submissions
-        self.sub_outputs = None
-        self.sub_node_dists = None
-        self.sub_data_paths = None
+        self.sub_outputs = {}
+        self.sub_node_dists = {}
+        self.sub_data_paths = {}
 
         # missing and foreign questions
-        self.check_question_results = None
+        self.check_question_results = {}
         # feedbacks for questions
         # self.question_sub_feedbacks = None
 
         # missing and foreign variables
-        self.check_var_results = None
+        self.check_var_results = {}
         # incorrect datatypes
-        self.check_data_results = None
+        self.check_data_results = {}
 
 
     def __len__(self):
         """
         Returns the number of workflows that are graded in the workflowgrader.
         """
-        return len(self.sub_outputs)
+        return sum(len(workflowset) for workflowset in self.sub_outputs.values() )
+        # return len(self.sub_outputs)
 
-    def cmp_var_dtype(self, s, q, v):
+    def cmp_var_dtype(self, workflowset, s, q, v):
         """
         Comparison of the variable datatype for question q and variable v of
         sub_outputs by submission s to ref_output to return a boolean value.
         """
-        return self.ref_output[q][v].dtype == self.sub_outputs[s][q][v].dtype
+        return self.ref_output[q][v].dtype == self.sub_outputs[workflowset][s][q][v].dtype
 
-    def cmp_var_data(self, s, q, v):
+    def cmp_var_data(self, workflowset, s, q, v):
         """
         Comparison of the variable data for question q and variable v of
         sub_outputs by submission s to ref_output using pandas .equals 
         function to return a boolean value.
         """
-        return self.ref_output[q][v].equals(self.sub_outputs[s][q][v])
+        return self.ref_output[q][v].equals(self.sub_outputs[workflowset][s][q][v])
 
-    
+    def extract_workflow_data(self, workflowset):
+        """
+        Extracts node, output and data path information from the workflows
+        found in the workflowset.
+        """
+        nodes = []
+        sub_outputs = []
+        data_paths = []
+        student_ids = []
+        fullpath_workflowset = os.path.join(self.workspace,workflowset)
+
+        # workflowset = os.path.basename(fullpath_workflowset)
+        # display_process_start('Extracting data from {}...'.format(workflowset.upper()))
+        
+        progress = tqdm(glob.glob(os.path.join(fullpath_workflowset,'[0-9]*')), ascii=' >=')
+        for wfp in progress:
+            progress.set_description('    Extracting data from {}'.format(os.path.basename(wfp)+'.knwf'))
+            student_ids.append(os.path.basename(wfp))
+            
+            # extraction of node information
+            d = collect_workflow_nodes(wfp)
+            # compare keys and create missing keys
+            for k in self.ref_node_dist.keys():
+                if k not in d.keys():
+                    d[k] = 0
+            nodes.append(d)
+
+            # extraction of output and data path information
+            try:
+                sub_output, data_path = collect_workflow_outputs(wfp,self.exec_path)
+                sub_outputs.append(sub_output)
+                data_paths.append(data_path)
+            except:
+                logging.exception('Error encountered with {}'.format(wfp))
+                sub_outputs.append({})
+                data_paths.append('')
+
+        self.student_ids[workflowset] = student_ids
+        self.sub_node_dists[workflowset] = dict(zip(student_ids,nodes))
+        self.sub_outputs[workflowset] = dict(zip(student_ids,sub_outputs))
+        self.sub_data_paths[workflowset] = dict(zip(student_ids,data_paths))
+        # display_process_output('Completed data extraction from {}.'.format(workflowset.upper()))
+        
+    def check_question_by_workflowset(self, workflowset):
+        """
+        Checks the questions submitted by students based on the 
+        annotations and outputs generated by `collect_workflow_outputs`.
+        Checks are made with respect to self.ref_output.
+            
+        Returns:
+            self.question_check_results : a dictionary of form {student_id: (missing, foreign)}
+            self.question_sub_feedbacks : a dictionary of form {student_id: *feedback*}
+        """
+
+        # display_process_start('Checking questions in {}...'.format(workflowset.upper()))
+
+        try:
+            self.sub_outputs[workflowset].keys()
+        except:
+            print("Need to accumulate workflow outputs with `accumulate_workflow_outputs` first.")
+        question_check_results = []
+        
+        progress = tqdm(self.student_ids[workflowset], ascii=True)
+        for s in progress:
+            progress.set_description('    Checking outputs from {}'.format(s+'.knwf'))
+            missingq, foreignq = compare_COT_annotation(self.ref_output,self.sub_outputs[workflowset][s])
+            feedback = assisted_question_inference(self.sub_outputs[workflowset][s], missingq, foreignq)
+            
+            question_check_results.append(compare_COT_annotation(self.ref_output,self.sub_outputs[workflowset][s]))
+       
+        self.check_question_results[workflowset] = dict(zip(self.student_ids[workflowset],question_check_results))
+
+    def check_variable_and_data_by_workflowset(self,workflowset):
+        """
+        Returns self.var_check_results dictionary with the format
+
+            {'q1': {'stu1': (a11,b11), 'stu2': (a12,b12)}, 'q2': {'stu1': (a21,b21), 'stu2': (a22,b2)}}
+        
+        where
+            aij: list of missing variables in student j submission of question i
+            bij: list of 2-tuple with form (variable_name, obs_var)
+        
+        when question i is not submitted by student j, (aij, bij) = 'UNGRADED'
+
+
+        self.var_check_results can be converted to a pandas dataframe with `pd.Dataframe.from_dict()`.
+        """
+
+        # display_process_start('Checking data in {}...'.format(workflowset.upper()))
+
+        var_check_results = []
+        data_check_results = []
+        # for question q 
+        q_progress = tqdm(self.ref_output.keys(), ascii=True)
+        for q in q_progress:
+        # for q in self.ref_output.keys():
+            var_check_result = []
+            data_check_result = []
+
+            # for student s
+            # s_progress = tqdm(self.student_ids[workflowset])
+            # for s in s_progress:
+            for s in self.student_ids[workflowset]:
+                q_progress.set_description('    Checking data from {}'.format(s+'.knwf'))
+                missing_vars = []
+                incorrect_var_dtype = []
+                incorrect_var_data = []
+
+                try:
+                    # check if student s has question q
+                    self.sub_outputs[workflowset][s][q]
+                except:
+                    # if not we label it as ungraded and move on to the next student
+                    missing_vars = ['UNGRADED']
+                    incorrect_var_dtype = ['UNGRADED']
+                    var_check_result.append((missing_vars,incorrect_var_dtype))
+
+                    incorrect_var_data = ['UNGRADED']
+                    data_check_result.append(incorrect_var_data)
+                    
+                    continue
+                # when question q is available iterate over target variables and target dtypes
+                for tar_var, tar_dtype in zip(self.ref_output[q].columns,self.ref_output[q].dtypes):
+                    try:
+                        # check if variable dtype can be accessed and equal to target variable dtype
+
+                        if not self.cmp_var_dtype(workflowset, s, q, tar_var):
+                            incorrect_var_dtype.append((tar_var,self.sub_outputs[workflowset][s][q][tar_var].dtype))
+
+                    except:
+                        # if variable dtype cannot be accessed, variable is taken to be missing
+                        missing_vars.append(tar_var)
+                
+                var_check_result.append((missing_vars,incorrect_var_dtype))
+
+                # try:
+                #     self.sub_outputs[workflowset][s][q]
+                # except:
+                #     incorrect_var_data = ['UNGRADED']
+                #     data_check_result.append(incorrect_var_data)
+                #     continue
+                
+                for tar_var in self.ref_output[q].columns:
+                    try:
+                        if not self.cmp_var_data(workflowset, s, q, tar_var):
+                            incorrect_var_data.append(tar_var)
+                    except:
+                        continue
+                data_check_result.append(incorrect_var_data)
+
+
+            var_check_results.append(dict(zip(self.student_ids[workflowset],var_check_result)))
+            data_check_results.append(dict(zip(self.student_ids[workflowset],data_check_result)))
+      
+        self.check_var_results[workflowset] = dict(zip(self.ref_output.keys(),var_check_results))
+        self.check_data_results[workflowset] = dict(zip(self.ref_output.keys(),data_check_results))
+
+    def generate_csv_by_workflowset(self, workflowset, save_dir):
+        """
+        Processes the data collected into a single pandas dataframe.
+        """
+        # filepath df
+        fp_df = pd.Series(self.sub_data_paths[workflowset],name='data_filepaths')
+
+        # check question df
+        cqr_df = pd.DataFrame.from_dict(self.check_question_results[workflowset],orient='index',columns=['missing_questions','foreign_questions'])
+        cqr_df['question_summary'] = cqr_df['missing_questions'].apply(lambda x : 1-(len(x)/len(self.ref_output.keys())))
+
+        # check variables df
+        cvr_df = pd.DataFrame.from_dict(self.check_var_results[workflowset])
+        # print(cvr_df)
+        for i in cvr_df.columns:
+            cvr_df[i+'_var_summary'] = cvr_df[i].apply(lambda x : 1-(len(x[0])/len(self.ref_output[i].columns)) if 'UNGRADED' not in x[0] else x[0][0])
+            cvr_df[i+'_dtype_summary'] = cvr_df[i].apply(lambda x : 1-(len(x[0])/len(self.ref_output[i].columns)) if 'UNGRADED' not in x[0] else x[0][0])
+            cvr_df[[i+'_missing_var',i+'_incorrect_var_dtype']] = pd.DataFrame(cvr_df[i].to_list(),index=cvr_df.index)
+            del cvr_df[i] 
+
+        # check data df
+        cdr_df = pd.DataFrame.from_dict(self.check_data_results[workflowset])
+        for i in cdr_df.columns:
+            cdr_df[i+'_data_summary'] = cdr_df[i].apply(lambda x : 1-(len(x)/len(self.ref_output[i].columns)) if x!=['UNGRADED'] else x[0])
+            cdr_df[i+'_incorrect_var_values'] = cdr_df[i]
+            del cdr_df[i] 
+
+        # node distribution df
+        n_df = pd.DataFrame.from_dict(self.sub_node_dists[workflowset],orient='index')
+        n_df['node_count'] = n_df.sum(axis=1)
+        n_df['node_summary'] = n_df['node_count']/sum(self.ref_node_dist.values())
+
+
+        # combined df
+        combined_df = pd.merge(cqr_df,cvr_df,left_index=True,right_index=True)
+        combined_df = pd.merge(combined_df,cdr_df,left_index=True,right_index=True,suffixes=('_var_dtype','_data'))
+        combined_df = pd.merge(combined_df,n_df,left_index=True,right_index=True,suffixes=('_var_dtype','_data'))
+        combined_df = pd.merge(combined_df,fp_df,left_index=True,right_index=True)
+
+        # move columns
+        move_col_to_front(combined_df)
+        combined_df.reset_index(inplace=True)
+
+        # saving dataframe to csv file 
+        combined_df.to_csv(os.path.join(save_dir,workflowset+'.csv'))
+
+        display_process_output('{} is saved at {}'.format(workflowset+'.csv',save_dir))
+
+
+# OLDER VERSION BELOW
     def accumulate_workflow_nodes(self):
         """
-        Extracts the nodes used in the submitted workflows.
+        Extracts the nodes used in the workflows found in the
+        provided workflowset.
         """
 
         nodes = []
-
-        for wfp in tqdm(self.sub_workflows):
+        progress = tqdm(self.sub_workflows)
+        for wfp in progress:
+            progress.set_description('  Processing {}'.format(os.path.basename(wfp)))
+            # progress.set_description('Hi')
             d = collect_workflow_nodes(wfp)
             # compare keys and create missing keys
             for k in self.ref_node_dist.keys():
@@ -207,7 +431,9 @@ class workflowgrader():
         sub_outputs = []
         data_paths = []
 
-        for wfp in tqdm(self.sub_workflows):
+        progress = tqdm(self.sub_workflows)
+        for wfp in progress:
+            progress.set_description('  Processing {}'.format(os.path.basename(wfp)))
             try:
                 sub_output, data_path = collect_workflow_outputs(wfp,self.exec_path)
                 sub_outputs.append(sub_output)
