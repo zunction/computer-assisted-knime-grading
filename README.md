@@ -23,12 +23,7 @@ Navigate to the extracted/cloned folder in anaconda prompt to send grading comma
 
 
 
-### Commands
-
-```
-python workflowgrader.py *your_knime_workspace* *your_reference_workflow* --save-dir *result_save_location*
-```
-#### Example
+### Usage examples
 
 A typical command which grade workflows in the workspace `lab5t1` using the reference workflow `ref_wf_lab5t1`.
 
