@@ -1,6 +1,6 @@
 # computer-assisted-knime-grading
 
-![Alt Text]https://github.com/zunction/computer-assisted-knime-grading/blob/main/imgs/cakg.gif)
+![Alt Text](https://github.com/zunction/computer-assisted-knime-grading/blob/main/imgs/cakg.gif)
 
 ## Introduction 
 
