@@ -19,9 +19,6 @@ There are no hard dependencies other than Python 3.6+ and the Python standard li
 [Download](https://github.com/zunction/computer-assisted-knime-grading/archive/refs/heads/main.zip) and extract the downloaded zip file  or clone this repository.
 Navigate to the extracted/cloned folder in anaconda prompt to send grading commands.
 
-## Commands
-
-
 
 ### Usage examples
 
