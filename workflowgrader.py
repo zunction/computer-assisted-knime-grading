@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import os
 import argparse
-# from datetime import datetime
 from utils import workflowgrader, display_process_start, display_process_output, current_datetime
 import time
 import sys, traceback, logging
@@ -13,11 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Grades KNIME workflows.')
     parser.add_argument('workspace', help='KNIME workspace with the workflows to be graded.')
     parser.add_argument('ref_workflow', help='Name of the reference workflow to be used.')
-    # parser.add_argument('-c','--classes', default=None, nargs='*', help='classes to be graded in the workspace')
     parser.add_argument('--exec-path', default=None, help='Not required unless KNIME is installed in non-standard location.')
-    # parser.add_argument('--workspace',required=True, help='KNIME workspace with the workflows to be graded.')
-    # parser.add_argument('--ref-workflow',required=True, help='Name of the reference workflow to be used.')
-    # parser.add_argument('--save-name',default=None ,help='Name of grading results to be saved as.')
     parser.add_argument('--save-dir',default=None, help='Directory to save the grading results to. Saved to workspace if not provided.')
    
     args = parser.parse_args()
@@ -40,7 +35,7 @@ def detect_workflowset(workspace):
                 workflowsets.append(i)
     if not workflowsets:
         display_process_output('No workflowsets detected. Processing workflows in workspace {}.'.format(os.path.basename(workspace)))
-        # print('    -> No workflowsets detected.')
+
     return workflowsets
 
 def main():
@@ -52,18 +47,18 @@ def main():
 
     logging.basicConfig(filename=os.path.join(args.save_dir,os.path.basename(args.workspace)+'.log'), filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
-    # print('\n')
-    # print('  KNIME WORKSPACE   : {}'.format(args.workspace))
-    # print('  REFERENCE WORKFLOW: {}'.format(args.ref_workflow))
-    
     display_process_start('Detecting workflowsets from {}...'.format(args.workspace))
 
     workflowsets = detect_workflowset(args.workspace)
 
+    # if not workflowsets:
+    #     workflowsets = [os.path.basename(args.workspace)]
+  
     display_process_start('Reading reference workflow...')
     wfg = workflowgrader(args.workspace,args.ref_workflow, args.exec_path, workflowsets)
     display_process_output('reading of {} is completed.'.format(args.ref_workflow))
-    
+
+      
     for wfs in wfg.workflowsets:
         display_process_start('Processing {}...'.format(wfs.upper()))
         wfg.extract_workflow_data(wfs)

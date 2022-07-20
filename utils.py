@@ -119,8 +119,9 @@ class workflowgrader():
         # workflow to be used as a reference for grading
         self.ref_workflow = ref_workflow
         # fullpaths of workflowsets to iterate, if None, fullpath to workspace is provided
-        self.fullpath_workflowsets = [workspace] if not workflowsets else [os.path.join(workspace,i) for i in workflowsets]
-       
+        # self.fullpath_workflowsets = [workspace] if not workflowsets else [os.path.join(workspace,i) for i in workflowsets]
+        self.fullpath_workflowsets = [os.path.join(workspace,i) for i in workflowsets]
+
         # assume that workflows are named using student ids
         self.student_ids = {}
 
@@ -128,7 +129,8 @@ class workflowgrader():
         self.exec_path = exec_path
 
         # list of fullpaths to folders with workflows
-        self.workflowsets = workflowsets
+        # self.workflowsets = workflowsets
+        self.workflowsets = [os.path.basename(workspace)] if not workflowsets else workflowsets
 
         # reference based on reference workflow
         self.ref_output, _ = collect_workflow_outputs(os.path.join(workspace,ref_workflow))
@@ -179,9 +181,14 @@ class workflowgrader():
         sub_outputs = []
         data_paths = []
         student_ids = []
-        fullpath_workflowset = os.path.join(self.workspace,workflowset)
-        
-        progress = tqdm(glob.glob(os.path.join(fullpath_workflowset,'[0-9]*')), ascii=' >=')
+        # fullpath_workflowset = os.path.join(self.workspace,workflowset)
+
+        if (len(self.workflowsets) == 1) and os.path.basename(self.workspace) == self.workflowsets[0]:
+            fullpath_workflowset = self.workspace
+        else:
+            fullpath_workflowset = os.path.join(self.workspace,workflowset)
+
+        progress = tqdm(glob.glob(os.path.join(fullpath_workflowset,'[ab0-9]*')), ascii=' >=')
         for wfp in progress:
             progress.set_description('    Extracting data from {}'.format(os.path.basename(wfp)+'.knwf'))
             student_ids.append(os.path.basename(wfp))
