@@ -45,6 +45,25 @@ This setup is recommended when grading the *same* workflows for a *more than one
 
 #### Processing commands
 
+The commands to process workflows are the same regardless of your workspace setup.
+To process the workflow, the arguments needed are:
+1. workspace directory
+2. reference workflow
+3. (Optional) save directory, which is the location to save the outputs 
+
+when the save directory is *not provided*, the outputs are saved to the workspace or the respective folders.
+
+The command below will process the workflows in the workspace `lab5t1` using the reference workflow `ref_wf_lab5t1`.
+```
+python workflowgrader.py C:\Users\123\knime-workspace\lab5t1 ref_wf_lab5t1
+```
+
+The command below will process the workflows in the workspace `lab5t2` using the reference workflow `ref_wf_lab5t2` and save the outputs to `Desktop`.
+```
+python workflowgrader.py C:\Users\123\knime-workspace\lab5t2 ref_wf_lab5t2 --save-dir C:\Users\123\Desktop
+```
+
+
 #### Test
 ![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
 
