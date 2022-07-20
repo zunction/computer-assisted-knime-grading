@@ -102,9 +102,9 @@ python workflowgrader.py C:\Users\123\knime-workspace\folderspace ref_wf --save-
     Checking data from a2.knwf: 100%|##########################| 2/2 [00:00<00:00, 105.22it/s]
       -> a.csv is saved at C:\Users\123\Desktop
   20-07-2022 13:36:24 - Processing B...
-    Extracting data from b3.knwf: 100%|======================================================================================================| 4/4 [00:45<00:00, 11.30s/it]
-    Checking outputs from b3.knwf: 100%|###################################################################################################| 4/4 [00:00<00:00, 1338.54it/s]
-    Checking data from b3.knwf: 100%|#######################################################################################################| 2/2 [00:00<00:00, 126.53it/s]
+    Extracting data from b3.knwf: 100%|========================| 4/4 [00:45<00:00, 11.30s/it]
+    Checking outputs from b3.knwf: 100%|#######################| 4/4 [00:00<00:00, 1338.54it/s]
+    Checking data from b3.knwf: 100%|##########################| 2/2 [00:00<00:00, 126.53it/s]
       -> b.csv is saved at C:\Users\123\Desktop
 
   A total 7 workflows were graded in 91.0 seconds
