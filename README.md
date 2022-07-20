@@ -29,12 +29,23 @@ Your workflows in the workspace can be organised in one of the two ways describe
 
 <img src="/images/gradespace.png" width="300">
 
-Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere 
+The setting in the workspace above has all the workflows in the same directory (`LOCAL (Local Workspace)`).
+Here the `wf1` to `wf5` are the workflows to be processed and `ref_wf` is the workflow used as a reference for the processing.
+This setup is suitable when grading workflows for a *single class*.
 
 
 #### Workflows in folders in a workspace
 
 <img src="/images/folderspace.png" width="300">
+
+For this workspace setting, there are folders (`a` and `b`) in the `LOCAL (Local Workspace)` directory which is used to separate workflows of different classes apart.
+The workflows are processed with `ref_wf` as the reference, which is located in the `LOCAL (Local Workspace)` directory.
+This setup is suitable when grading the *same* workflows for a *more than one class*.
+
+
+in the workspace above has all the workflows in the same directory (`LOCAL (Local Workspace)`).
+Here the `wf1` to `wf5` are the workflows to be processed and `ref_wf` is the workflow used as a reference for the processing.
+
 
 Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere 
 
