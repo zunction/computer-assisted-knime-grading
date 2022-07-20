@@ -139,7 +139,6 @@ The output `.csv` file provides the following information on the workflows it ha
 
 
 
-The filepaths which the data is loaded from using CSV Table Reader, Excel Table Reader or File Reader node.
 ## Possible explorations
 
 - Summarizing workflows when reference workflow is not provided
