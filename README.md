@@ -110,32 +110,11 @@ python workflowgrader.py C:\Users\123\knime-workspace\folderspace ref_wf --save-
   A total 7 workflows were graded in 91.0 seconds
 ```
 
-**Note**: If the workflows to be processed are open in KNIME, the following error will be encountered:
-```
-ChildProcessError: Workflow is locked by another KNIME instance
-```
-
-#### Test
-![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
-
-A typical command which grade workflows in the workspace `lab5t1` using the reference workflow `ref_wf_lab5t1`.
-
-```
-python workflowgrader.py C:\Users\123\knime-workspace\lab5t1 ref_wf_lab5t1
-```
-
-By default the csv output(s) of the process is saved in the KNIME workspace directory or within the folders in the KNIME workspace.
-An alternative to consolidate all the outputs at a single location like the Desktop is possible with the `--save-dir` optional argument.
-Below is the command for grading the same workflows above with the output saved to `C:\Users\123\Desktop`.
-
-```
-python workflowgrader.py C:\Users\123\knime-workspace\lab5t1 ref_wf_lab5t1 --save-dir C:\Users\123\Desktop
-```
-
-## 
+**Note**: Please ensure that there are *no* workflows are open in KNIME before processing them. When attempting to process a workflow opened in KNIME, the error message `ChildProcessError: Workflow is locked by another KNIME instance` will be returned.
 
 
-## Future work
+
+## Possible explorations
 
 - Summarizing workflows when reference workflow is not provided
 - Mark/grade assignment to graded workflow
