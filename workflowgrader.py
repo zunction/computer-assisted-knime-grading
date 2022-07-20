@@ -45,9 +45,10 @@ def detect_workflowset(workspace):
 
 def main():
     args = parse_args()
-
+    null_save_dir = None
     if not args.save_dir:
         args.save_dir = args.workspace
+        null_save_dir = True
 
     logging.basicConfig(filename=os.path.join(args.save_dir,os.path.basename(args.workspace)+'.log'), filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
@@ -69,8 +70,17 @@ def main():
         wfg.check_question_by_workflowset(wfs)
         wfg.check_variable_and_data_by_workflowset(wfs)
 
-        if not (wfs == os.path.basename(args.save_dir) and len(workflowsets) == 0):
-            args.save_dir = os.path.join(args.workspace,wfs)
+        if not (wfs == os.path.basename(args.save_dir) and len(workflowsets) == 0): 
+            if null_save_dir:
+                args.save_dir = os.path.join(args.workspace,wfs)
+                wfg.generate_csv_by_workflowset(wfs,args.save_dir)
+            else:
+                wfg.generate_csv_by_workflowset(wfs,args.save_dir)
+        else:
+            wfg.generate_csv_by_workflowset(wfs,args.workspace)
+            # else:
+
+            # args.save_dir = os.path.join(args.workspace,wfs)
 
 
 
@@ -80,7 +90,7 @@ def main():
         #     else:
         #         args.save_dir = os.path.join(args.workspace,wfs)
       
-        wfg.generate_csv_by_workflowset(wfs,args.save_dir)
+        # wfg.generate_csv_by_workflowset(wfs,args.save_dir)
  
     print('\n  A total {} workflows were graded in {} seconds'.format(len(wfg),round(time.time() - start_time,0))) 
 
