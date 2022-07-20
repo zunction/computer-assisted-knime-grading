@@ -29,7 +29,6 @@ Your workflows in the workspace can be organised in one of the two ways describe
 
 <img align="left" src="/images/gradespace.png" width="300">
 
-<img align="right" src="/images/folderspace.png" width="300">
 
 
 
