@@ -53,10 +53,14 @@ To process the workflow, the arguments needed are:
 
 when the save directory is *not provided*, the outputs are saved to the workspace or the respective folders.
 
+**Example 1**
+
 To process workflows in the workspace `gradespace` (workflows in a workspace) using the reference workflow `ref_wf`:
 ```
 python workflowgrader.py C:\Users\123\knime-workspace\gradespace ref_wf
 ```
+
+**Result**
 
 ```
 (base) C:\Users\123\Documents\Learnings\computer-assisted-knime-grading>python workflowgrader.py C:\Users\123\knime-workspace\gradespace ref_wf
@@ -73,6 +77,7 @@ python workflowgrader.py C:\Users\123\knime-workspace\gradespace ref_wf
   A total 5 workflows were graded in 74.0 seconds
 ```
 
+**Example 2**
 
 To process workflows in the workspace `folderspace` (workflows in folders in a workspace) using the reference workflow `ref_wf` and save the outputs to `Desktop`:
 ```
