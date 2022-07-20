@@ -29,16 +29,14 @@ Your workflows in the workspace can be organised in one of the two ways describe
 
 <img src="/images/gradespace.png" width="300">
 
-![Alt Text](/images/gradespace.png)
-
+Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere 
 
 
 #### Workflows in folders in a workspace
 
 <img src="/images/folderspace.png" width="300">
 
-![Alt Text](/images/folderspace.png)
-
+Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere 
 
 #### Test
 ![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
