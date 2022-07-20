@@ -120,7 +120,7 @@ The output `.csv` file provides the following information on the workflows it ha
 
 
 | S/N | Attribute | Description | Datatype | Remarks |
-|:---:|:---:|:---:|:---:|---|
+|:---:|:---:|:---|:---:|---|
 | 1 | index | A unique identifier for each submitted workflow | string |  |
 | 2 | question_completion | A value between [0,1] to indicate proportion of questions attempted. | float |  |
 | 3 | *_var_completion | A value between [0,1] to indicate proportion of variables with names matching the reference workflow. | float |  |
