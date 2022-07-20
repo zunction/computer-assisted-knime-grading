@@ -24,30 +24,26 @@ Navigate to the extracted/cloned folder in anaconda prompt to send commands to p
 The *first step* to using CAKG is to set up a worksplace containing the workflows to be processed.
 Your workflows in the workspace can be organised in one of the two ways described below:
 
+#### Setup of workspace
 
-#### Workflows in a workspace
+##### Workflows in a workspace
 
 <img src="/images/gradespace.png" width="300">
 
-The setting in the workspace above has all the workflows in the same directory (`LOCAL (Local Workspace)`).
+The setting in the workspace above has all the workflows in the same `LOCAL (Local Workspace)` directory.
 Here the `wf1` to `wf5` are the workflows to be processed and `ref_wf` is the workflow used as a reference for the processing.
 This setup is suitable when grading workflows for a *single class*.
 
 
-#### Workflows in folders in a workspace
+##### Workflows in folders in a workspace
 
 <img src="/images/folderspace.png" width="300">
 
 For this workspace setting, there are folders (`a` and `b`) in the `LOCAL (Local Workspace)` directory which is used to separate workflows of different classes apart.
 The workflows are processed with `ref_wf` as the reference, which is located in the `LOCAL (Local Workspace)` directory.
-This setup is suitable when grading the *same* workflows for a *more than one class*.
+This setup is recommended when grading the *same* workflows for a *more than one class* as it consolidates all the workflows in a single workspace.
 
-
-in the workspace above has all the workflows in the same directory (`LOCAL (Local Workspace)`).
-Here the `wf1` to `wf5` are the workflows to be processed and `ref_wf` is the workflow used as a reference for the processing.
-
-
-Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere Type some words hrere 
+#### Processing commands
 
 #### Test
 ![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
