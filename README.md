@@ -27,6 +27,8 @@ Your workflows in the workspace can be organised in one of the two ways describe
 
 #### Workflows in a workspace
 ![Alt Text](/images/gradespace.png)
+<img src="/images/gradespace.png" width="48">
+
 
 
 
