@@ -63,15 +63,16 @@ python workflowgrader.py C:\Users\123\knime-workspace\gradespace ref_wf
 **Result**
 
 ```
-(base) C:\Users\123\Documents\Learnings\computer-assisted-knime-grading>python workflowgrader.py C:\Users\123\knime-workspace\gradespace ref_wf
+(base) C:\Users\123\computer-assisted-knime-grading>python workflowgrader.py \
+                              C:\Users\123\knime-workspace\gradespace ref_wf
   20-07-2022 15:13:46 - Detecting workflowsets from C:\Users\123\knime-workspace\gradespace...
       -> No workflowsets detected. Processing workflows in workspace gradespace.
   20-07-2022 15:13:46 - Reading reference workflow...
       -> reading of ref_wf is completed.
   20-07-2022 15:13:58 - Processing GRADESPACE...
-    Extracting data from b3.knwf: 100%|======================================================================================================| 5/5 [01:02<00:00, 12.47s/it]
-    Checking outputs from b3.knwf: 100%|###################################################################################################| 5/5 [00:00<00:00, 1992.92it/s]
-    Checking data from b3.knwf: 100%|########################################################################################################| 2/2 [00:00<00:00, 81.84it/s]
+    Extracting data from b3.knwf: 100%|=========================| 5/5 [01:02<00:00, 12.47s/it]
+    Checking outputs from b3.knwf: 100%|########################| 5/5 [00:00<00:00, 1992.92it/s]
+    Checking data from b3.knwf: 100%|#############################| 2/2 [00:00<00:00, 81.84it/s]
       -> gradespace.csv is saved at C:\Users\123\knime-workspace\gradespace
 
   A total 5 workflows were graded in 74.0 seconds
@@ -84,17 +85,21 @@ To process workflows in the workspace `folderspace` (workflows in folders in a w
 python workflowgrader.py C:\Users\123\knime-workspace\folderspace ref_wf --save-dir C:\Users\123\Desktop
 ```
 
+**Result**
+
 ```
-(base) C:\Users\123\computer-assisted-knime-grading>python workflowgrader.py C:\Users\s11006381\knime-workspace\folderspace ref_wf --save-dir C:\Users\123\Desktop
+(base) C:\Users\123\computer-assisted-knime-grading>python workflowgrader.py \
+                       C:\Users\s11006381\knime-workspace\folderspace ref_wf \
+                       --save-dir C:\Users\123\Desktop
   20-07-2022 13:35:38 - Detecting workflowsets from C:\Users\123\knime-workspace\folderspace...
       -> detected workflowset A.
       -> detected workflowset B.
   20-07-2022 13:35:38 - Reading reference workflow...
       -> reading of ref_wf is completed.
   20-07-2022 13:35:51 - Processing A...
-    Extracting data from a2.knwf: 100%|======================================================================================================| 3/3 [00:32<00:00, 10.87s/it]
-    Checking outputs from a2.knwf: 100%|###################################################################################################| 3/3 [00:00<00:00, 1333.36it/s]
-    Checking data from a2.knwf: 100%|#######################################################################################################| 2/2 [00:00<00:00, 105.22it/s]
+    Extracting data from a2.knwf: 100%|========================| 3/3 [00:32<00:00, 10.87s/it]
+    Checking outputs from a2.knwf: 100%|#######################| 3/3 [00:00<00:00, 1333.36it/s]
+    Checking data from a2.knwf: 100%|##########################| 2/2 [00:00<00:00, 105.22it/s]
       -> a.csv is saved at C:\Users\123\Desktop
   20-07-2022 13:36:24 - Processing B...
     Extracting data from b3.knwf: 100%|======================================================================================================| 4/4 [00:45<00:00, 11.30s/it]
