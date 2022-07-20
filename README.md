@@ -89,7 +89,7 @@ python workflowgrader.py C:\Users\123\knime-workspace\folderspace ref_wf --save-
 
 ```
 (base) C:\Users\123\computer-assisted-knime-grading>python workflowgrader.py \
-                       C:\Users\s11006381\knime-workspace\folderspace ref_wf \
+                       C:\Users\123\knime-workspace\folderspace ref_wf \
                        --save-dir C:\Users\123\Desktop
   20-07-2022 13:35:38 - Detecting workflowsets from C:\Users\123\knime-workspace\folderspace...
       -> detected workflowset A.
