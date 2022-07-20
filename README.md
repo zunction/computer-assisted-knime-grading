@@ -27,8 +27,9 @@ Your workflows in the workspace can be organised in one of the two ways describe
 
 #### Workflows in a workspace
 
-<img align="left" src="/images/gradespace.png" width="300">
+<img src="/images/gradespace.png" width="300">
 
+![Alt Text](/images/gradespace.png)
 
 
 
@@ -36,6 +37,7 @@ Your workflows in the workspace can be organised in one of the two ways describe
 
 <img src="/images/folderspace.png" width="300">
 
+![Alt Text](/images/folderspace.png)
 
 
 #### Test
